@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import sql from "./db.js";
+import usersRoute from "./routes/users/usersRoute.js";
+import ordersRoute from "./routes/orders/ordersRoute.js";
+
 
 const app = express();
 dotenv.config();
@@ -9,38 +12,13 @@ app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // GET route for fetching all users
-app.get("/api/v1/users", async (req, res) => {
-  try {
-    const users = await sql`SELECT * FROM users`;
-    res.status(200).json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.use("/api/v1/users", usersRoute);
 
 // GET route for fetching all orders
-app.get("/api/v1/orders", async (req, res) => {
-  try {
-    const orders = await sql`SELECT * FROM orders`;
-    res.status(200).json(orders);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.use("/api/v1/orders", ordersRoute);
 
 // //get rout for reading one user:
-app.get("/api/v1/users/:user_id", async (req, res) => {
-  const { user_id } = req.params;
-  try {
-    const user = await sql`SELECT * FROM users WHERE id = ${user_id}`;
-    if (user.length === 0) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res.status(200).json(user[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.get("/api/v1/users/:user_id", usersRoute);
 
 // //get rout for reading one order:
 app.get("/api/v1/orders/:order_id", async (req, res) => {
@@ -57,22 +35,7 @@ app.get("/api/v1/orders/:order_id", async (req, res) => {
 });
 
 // Create a user
-app.post("/api/v1/users", async (req, res) => {
-  const { first_name, last_name, age } = req.body;
-  if (!first_name || !last_name || !age) {
-    return res
-      .status(400)
-      .json({ error: "First name, last name, and age are required" });
-  }
-
-  try {
-    const result = await sql`INSERT INTO users (first_name, last_name, age) 
-        VALUES (${first_name}, ${last_name}, ${age}) RETURNING *`;
-    res.status(201).json(result[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.post("/api/v1/users", usersRoute);
 
 // Create an order
 app.post("/api/v1/orders", async (req, res) => {
@@ -190,3 +153,5 @@ const PORT = 8000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+
