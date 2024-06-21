@@ -11,6 +11,10 @@ dotenv.config();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
+
+
+
+
 // GET route for fetching all users
 app.use("/api/v1/users", usersRoute);
 
@@ -18,21 +22,10 @@ app.use("/api/v1/users", usersRoute);
 app.use("/api/v1/orders", ordersRoute);
 
 // //get rout for reading one user:
-app.get("/api/v1/users/:user_id", usersRoute);
+app.use("/api/v1/users/:user_id", usersRoute);
 
 // //get rout for reading one order:
-app.get("/api/v1/orders/:order_id", async (req, res) => {
-  const { order_id } = req.params;
-  try {
-    const order = await sql`SELECT * FROM orders WHERE id = ${order_id}`;
-    if (order.length === 0) {
-      return res.status(404).json({ error: "order not found" });
-    }
-    res.status(200).json(order[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.use("/api/v1/orders/:order_id", ordersRoute);
 
 // Create a user
 app.post("/api/v1/users", usersRoute);
@@ -54,25 +47,7 @@ app.post("/api/v1/orders", async (req, res) => {
 });
 
 //delete a user
-app.delete("/api/v1/users/:user_id", async (req, res) => {
-  const { user_id } = req.params;
-  if (!user_id) {
-    return res.status(400).json({ error: "User ID is required" });
-  }
-
-  try {
-    const result =
-      await sql`DELETE FROM users WHERE id = ${user_id} RETURNING *`;
-    if (result.count === 0) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res
-      .status(200)
-      .json({ message: "User deleted successfully", user: result[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.delete("/api/v1/users/:user_id", usersRoute);
 
 //delete an order
 app.delete("/api/v1/orders/:order_id", async (req, res) => {
@@ -96,31 +71,7 @@ app.delete("/api/v1/orders/:order_id", async (req, res) => {
 });
 
 // PUT route for updating a user
-app.put("/api/v1/users/:user_id", async (req, res) => {
-  const { user_id } = req.params;
-  const { first_name, last_name, age } = req.body;
-
-  if (!first_name || !last_name || !age) {
-    return res
-      .status(400)
-      .json({ error: "First name, last name, and age are required" });
-  }
-
-  try {
-    const result = await sql`UPDATE users 
-    SET first_name=${first_name}, last_name=${last_name}, age=${age}
-    WHERE id=${user_id}
-    RETURNING *`;
-    if (result.count === 0) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res
-      .status(200)
-      .json({ message: "User updated successfully", user: result[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.put("/api/v1/users/:user_id", usersRoute);
 
 //put route for updating an order:
 app.put(`/api/v1/orders/:order_id`, async (req, res) => {
@@ -148,6 +99,8 @@ app.put(`/api/v1/orders/:order_id`, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 const PORT = 8000;
 app.listen(PORT, () => {

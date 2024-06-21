@@ -1,0 +1,87 @@
+import sql from "../../db.js"; // Import the database connection
+
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await sql`SELECT * FROM users`;
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const creatUser = async (req, res) => {
+  const { first_name, last_name, age } = req.body;
+  if (!first_name || !last_name || !age) {
+    return res
+      .status(400)
+      .json({ error: "First name, last name, and age are required" });
+  }
+  try {
+    const result = await sql`INSERT INTO users (first_name, last_name, age) 
+        VALUES (${first_name}, ${last_name}, ${age}) RETURNING *`;
+    res.status(201).json(result[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getOneUser = async (req, res) => {
+  const { user_id } = req.params;
+  try {
+    const user = await sql`SELECT * FROM users WHERE id = ${user_id}`;
+    if (user.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(200).json(user[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const deleteUser = async (req, res) => {
+  const { user_id } = req.params;
+  if (!user_id) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    const result =
+      await sql`DELETE FROM users WHERE id = ${user_id} RETURNING *`;
+    if (result.count === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res
+      .status(200)
+      .json({ message: "User deleted successfully", user: result[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  const { user_id } = req.params;
+  const { first_name, last_name, age } = req.body;
+
+  if (!first_name || !last_name || !age) {
+    return res
+      .status(400)
+      .json({ error: "First name, last name, and age are required" });
+  }
+
+  try {
+    const result = await sql`UPDATE users 
+    SET first_name=${first_name}, last_name=${last_name}, age=${age}
+    WHERE id=${user_id}
+    RETURNING *`;
+    if (result.count === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res
+      .status(200)
+      .json({ message: "User updated successfully", user: result[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
